@@ -3,7 +3,7 @@
 Plugin Name: درگاه زرین گیت Gravity Forms
 Plugin URI: http://gravityforms.ir/
 Description: افزونه درگاه پرداخت زرین گیت برای فرم ساز فوق پیشرفته Gravity Forms 
-Version: 1.0.0
+Version: 1.10.0
 Author: حنان ابراهیمی ستوده
 Author URI: http://webforest.ir/
 */
@@ -24,13 +24,9 @@ class GFZarinGate {
             if(function_exists('members_get_capabilities'))
             add_filter('members_get_capabilities', array("GFZarinGate", "members_get_capabilities"));
             add_filter("gform_addon_navigation", array('GFZarinGate', 'create_menu_by_HANNANStd'));
-            add_action('gform_payment_status', array('GFZarinGate','admin_edit_payment_status_by_HANNANStd'), 3, 3);
             add_action('gform_entry_info', array('GFZarinGate','admin_edit_payment_status_details_by_HANNANStd'), 4, 2);
             add_action('gform_after_update_entry', array('GFZarinGate','admin_update_payment_by_HANNANStd'), 4, 2);
-			add_action('gform_entry_info', array('GFZarinGate','gateway_entry_info_By_HANNANStd'), 10, 2);
             if(self::is_zaringate_page()){
-                require_once(GFCommon::get_base_path() . "/tooltips.php");
-                add_filter('gform_tooltips', array('GFZarinGate', 'tooltips'));
 				wp_enqueue_script(array("sack"));
 				self::setup();
             }
@@ -38,7 +34,6 @@ class GFZarinGate {
                 add_action('wp_ajax_gf_zaringate_update_feed_active', array('GFZarinGate', 'update_feed_active_By_HANNANStd'));
                 add_action('wp_ajax_gf_select_zaringate_form', array('GFZarinGate', 'select_zaringate_form_By_HANNANStd'));
                 add_action('wp_ajax_gf_zaringate_confirm_settings', array('GFZarinGate', 'confirm_settings_By_HANNANStd'));
-                add_action('wp_ajax_gf_zaringate_load_notifications', array('GFZarinGate', 'load_notifications_By_HANNANStd'));
             }
             else if(RGForms::get("page") == "gf_settings"){
                 RGForms::add_settings_page("حساب زرین گیت", array("GFZarinGate", "settings_page_By_HANNANStd"), self::get_base_url() . "/static/zaringate.png");
@@ -69,10 +64,7 @@ class GFZarinGate {
             GFZarinGateData::update_table();
         update_option("gf_zaringate_version", self::$version);
     }
-    public static function tooltips($tooltips){
-        $zaringate_tooltips = array();
-        return array_merge($tooltips, $zaringate_tooltips);
-    }
+
     public static function delay_post_By_HANNANStd($is_disabled, $form, $lead){
     $config = GFZarinGateData::get_feed_by_form($form["id"]);
     if(!$config)
@@ -335,17 +327,6 @@ class GFZarinGate {
         </script>
         <?php
     }
-    public static function load_notifications_By_HANNANStd(){
-        $form_id = $_POST["form_id"];
-        $form = RGFormsModel::get_form_meta($form_id);
-        $notifications = array();
-        if(is_array(rgar($form, "notifications"))){
-            foreach($form["notifications"] as $notification){
-                $notifications[] = array("name" => $notification["name"], "id" => $notification["id"]);
-            }
-        }
-        die(json_encode($notifications));
-    }
     public static function confirm_settings_By_HANNANStd(){
         update_option("gf_zaringate_configured", $_POST["is_confirmed"]);
     }
@@ -535,23 +516,23 @@ class GFZarinGate {
 	<div class="wrap">
 		<img alt="<?php _e("زرین گیت", "gravityformszaringate") ?>" style="margin: 15px 7px 0pt 0pt; float: left;" src="<?php echo self::get_base_url() ?>/static/zaringate.png"/>
 		<ul class="subsubsub">
-                    <li><a class="<?php echo (!RGForms::get("tab") || RGForms::get("tab") == "today") ? "current" : "" ?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>"><?php _e("امروز", "gravityforms"); ?></a> | </li>
-					<li><a class="<?php echo RGForms::get("tab") == "yesterday" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=yesterday"><?php _e("دیروز", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "last7days" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last7days"><?php _e("هفت روز گذشته", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "thisweek" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thisweek"><?php _e("هفته جاری", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "last30days" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last30days"><?php _e("30 روز گذشته", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "thismonth" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thismonth"><?php _e("ماه جاری", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "lastmonth" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=lastmonth"><?php _e("ماه قبل", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "last2month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last2month"><?php _e("2 ماه اخیر", "gravityforms"); ?></a> | </li>
-					<li><a class="<?php echo RGForms::get("tab") == "last3month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last3month"><?php _e("3 ماه اخیر", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "last6month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last6month"><?php _e("6 ماه اخیر", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "last9month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last9month"><?php _e("9 ماه اخیر", "gravityforms"); ?></a> | </li>
-                    <li><a class="<?php echo RGForms::get("tab") == "last12month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last12month"><?php _e("یک سال اخیر", "gravityforms"); ?></a> | </li>
-					<li><a class="<?php echo RGForms::get("tab") == "spring" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=spring"><?php _e("بهار", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "summer" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=summer"><?php _e("تابستان", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "fall" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=fall"><?php _e("پاییز", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "winter" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=winter"><?php _e("زمستان", "gravityforms"); ?></a>|</li>
-					<li><a class="<?php echo RGForms::get("tab") == "thisyear" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thisyear"><?php _e("امسال", "gravityforms"); ?></a></li>      
+                    <li><a class="<?php echo (!RGForms::get("tab") || RGForms::get("tab") == "today") ? "current" : "" ?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>"><?php _e("امروز", "gravityformszaringate"); ?></a> | </li>
+					<li><a class="<?php echo RGForms::get("tab") == "yesterday" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=yesterday"><?php _e("دیروز", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "last7days" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last7days"><?php _e("هفت روز گذشته", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "thisweek" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thisweek"><?php _e("هفته جاری", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "last30days" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last30days"><?php _e("30 روز گذشته", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "thismonth" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thismonth"><?php _e("ماه جاری", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "lastmonth" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=lastmonth"><?php _e("ماه قبل", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "last2month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last2month"><?php _e("2 ماه اخیر", "gravityformszaringate"); ?></a> | </li>
+					<li><a class="<?php echo RGForms::get("tab") == "last3month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last3month"><?php _e("3 ماه اخیر", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "last6month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last6month"><?php _e("6 ماه اخیر", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "last9month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last9month"><?php _e("9 ماه اخیر", "gravityformszaringate"); ?></a> | </li>
+                    <li><a class="<?php echo RGForms::get("tab") == "last12month" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=last12month"><?php _e("یک سال اخیر", "gravityformszaringate"); ?></a> | </li>
+					<li><a class="<?php echo RGForms::get("tab") == "spring" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=spring"><?php _e("بهار", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "summer" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=summer"><?php _e("تابستان", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "fall" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=fall"><?php _e("پاییز", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "winter" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=winter"><?php _e("زمستان", "gravityformszaringate"); ?></a>|</li>
+					<li><a class="<?php echo RGForms::get("tab") == "thisyear" ? "current" : ""?>" href="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=thisyear"><?php _e("امسال", "gravityformszaringate"); ?></a></li>      
 					<br/><br/>
 					<form method="post" action="?page=gf_zaringate&view=stats&id=<?php echo $_GET["id"] ?>&tab=selection">
 					<span style="font-family:byekan;">از تاریخ</span><input type="text" name="min"  class="datepicker" value="<?php echo $_POST['min']; ?>" autocomplete="off"/>
@@ -566,32 +547,32 @@ class GFZarinGate {
 			case "spring" :
             $chart_info = self::season_chart_info($config,1,1);
 			$chart_info_gateways = self::season_chart_info($config,2,1);
-            $chart_info_zaring = self::season_chart_info($config,3,1);
+            $chart_info_zarin = self::season_chart_info($config,3,1);
 			$chart_info_site = self::season_chart_info($config,4,1);
 			break;
 			case "summer" :
             $chart_info = self::season_chart_info($config,1,2);
 			$chart_info_gateways = self::season_chart_info($config,2,2);
-            $chart_info_zaring = self::season_chart_info($config,3,2);
+            $chart_info_zarin = self::season_chart_info($config,3,2);
 			$chart_info_site = self::season_chart_info($config,4,2);
 			break;
 			case "fall" :
             $chart_info = self::season_chart_info($config,1,3);
 			$chart_info_gateways = self::season_chart_info($config,2,3);
-            $chart_info_zaring = self::season_chart_info($config,3,3);
+            $chart_info_zarin = self::season_chart_info($config,3,3);
 			$chart_info_site = self::season_chart_info($config,4,3);
 			break;
 			case "winter" :
             $chart_info = self::season_chart_info($config,1,4);
 			$chart_info_gateways = self::season_chart_info($config,2,4);
-            $chart_info_zaring = self::season_chart_info($config,3,4);
+            $chart_info_zarin = self::season_chart_info($config,3,4);
 			$chart_info_site = self::season_chart_info($config,4,4);
 			break;
 			//ok
 			case "thisyear" :
             $chart_info = self::yearly_chart_info($config,1);
 			$chart_info_gateways = self::yearly_chart_info($config,2);
-            $chart_info_zaring = self::yearly_chart_info($config,3);
+            $chart_info_zarin = self::yearly_chart_info($config,3);
 			$chart_info_site = self::yearly_chart_info($config,4);
 			break;
 			//
@@ -599,81 +580,81 @@ class GFZarinGate {
             case "last7days" :
             $chart_info = self::lastxdays_chart_info($config,1,7);
             $chart_info_gateways = self::lastxdays_chart_info($config,2,7);
-            $chart_info_zaring = self::lastxdays_chart_info($config,3,7);
+            $chart_info_zarin = self::lastxdays_chart_info($config,3,7);
             $chart_info_site = self::lastxdays_chart_info($config,4,7);
             break;
 			case "thisweek" :
             $chart_info = self::thisweek_chart_info($config,1);
             $chart_info_gateways = self::thisweek_chart_info($config,2);
-            $chart_info_zaring = self::thisweek_chart_info($config,3);
+            $chart_info_zarin = self::thisweek_chart_info($config,3);
             $chart_info_site = self::thisweek_chart_info($config,4);
             break;
 			case "last30days" :
             $chart_info = self::lastxdays_chart_info($config,1,30);
             $chart_info_gateways = self::lastxdays_chart_info($config,2,30);
-            $chart_info_zaring = self::lastxdays_chart_info($config,3,30);
+            $chart_info_zarin = self::lastxdays_chart_info($config,3,30);
             $chart_info_site = self::lastxdays_chart_info($config,4,30);
             break;
 			//
 			case "thismonth" :
             $chart_info = self::targetmdays_chart_info($config,1,1);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,1);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,1);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,1);
             $chart_info_site = self::targetmdays_chart_info($config,4,1);
             break;
 			//
 			case "lastmonth" :
             $chart_info = self::targetmdays_chart_info($config,1,2);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,2);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,2);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,2);
             $chart_info_site = self::targetmdays_chart_info($config,4,2);
             break;			
 			case "last2month" :
             $chart_info = self::targetmdays_chart_info($config,1,60);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,60);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,60);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,60);
             $chart_info_site = self::targetmdays_chart_info($config,4,60);
             break;
 			case "last3month" :
             $chart_info = self::targetmdays_chart_info($config,1,3);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,3);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,3);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,3);
             $chart_info_site = self::targetmdays_chart_info($config,4,3);
             break;
 			case "last6month" :
             $chart_info = self::targetmdays_chart_info($config,1,6);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,6);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,6);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,6);
             $chart_info_site = self::targetmdays_chart_info($config,4,6);
             break;
 			case "last9month" :
             $chart_info = self::targetmdays_chart_info($config,1,9);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,9);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,9);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,9);
             $chart_info_site = self::targetmdays_chart_info($config,4,9);
             break;
 			case "last12month" :
             $chart_info = self::targetmdays_chart_info($config,1,12);
             $chart_info_gateways = self::targetmdays_chart_info($config,2,12);
-            $chart_info_zaring = self::targetmdays_chart_info($config,3,12);
+            $chart_info_zarin = self::targetmdays_chart_info($config,3,12);
             $chart_info_site = self::targetmdays_chart_info($config,4,12);
             break;
 			case "selection" :
             $chart_info = self::selection_chart_info($config,1,$min,$max);
             $chart_info_gateways = self::selection_chart_info($config,2,$min,$max);
-            $chart_info_zaring = self::selection_chart_info($config,3,$min,$max);
+            $chart_info_zarin = self::selection_chart_info($config,3,$min,$max);
             $chart_info_site = self::selection_chart_info($config,4,$min,$max);
             break;
 			case "yesterday" :
             $chart_info = self::tyday_chart_info($config,1,2);
 			$chart_info_gateways = self::tyday_chart_info($config,2,2);
-            $chart_info_zaring = self::tyday_chart_info($config,3,2);
+            $chart_info_zarin = self::tyday_chart_info($config,3,2);
 			$chart_info_site = self::tyday_chart_info($config,4,2);
 			break;
 			default :
             $chart_info = self::tyday_chart_info($config,1,1);
 			$chart_info_gateways = self::tyday_chart_info($config,2,1);
-            $chart_info_zaring = self::tyday_chart_info($config,3,1);
+            $chart_info_zarin = self::tyday_chart_info($config,3,1);
 			$chart_info_site = self::tyday_chart_info($config,4,1);
 			break;
 		}
@@ -804,7 +785,7 @@ class GFZarinGate {
 		 <h2><?php _e(" کل درآمد های زرین گیت", "gravityformszaringate") ?></h2>
             <form method="post" action="">
                 <?php
-                if(!$chart_info_zaring["series"]){
+                if(!$chart_info_zarin["series"]){
                     ?>
                     <div class="zaringate_message_container"><?php _e("موردی یافت نشد . ", "gravityformszaringate") ?></div>
                     <?php
@@ -835,13 +816,13 @@ class GFZarinGate {
                         <div class="zaringate_summary_value"><?php echo GF_tr_num(GFCommon::to_money($total_revenue),'fa') ?></div>
                     </div>
                     <div class="zaringate_summary_item">
-                        <div class="zaringate_summary_title"><?php echo $chart_info_zaring["revenue_label"]?></div>
-                        <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zaring["revenue"],'fa') ?></div>
+                        <div class="zaringate_summary_title"><?php echo $chart_info_zarin["revenue_label"]?></div>
+                        <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zarin["revenue"],'fa') ?></div>
                     </div>
 										
 				<div class="zaringate_summary_item">
-				<div class="zaringate_summary_title"><?php echo $chart_info_zaring["mid_label"] ?></div>
-				<div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zaring["mid"],'fa') ?></div>
+				<div class="zaringate_summary_title"><?php echo $chart_info_zarin["mid_label"] ?></div>
+				<div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zarin["mid"],'fa') ?></div>
 				</div>
 				
                     <div class="zaringate_summary_item">
@@ -849,12 +830,12 @@ class GFZarinGate {
                         <div class="zaringate_summary_value"><?php echo GF_tr_num($total_sales,'fa') ?></div>
                     </div>
                     <div class="zaringate_summary_item">
-                        <div class="zaringate_summary_title"><?php echo $chart_info_zaring["sales_label"] ?></div>
-                        <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zaring["sales"],'fa') ?></div>
+                        <div class="zaringate_summary_title"><?php echo $chart_info_zarin["sales_label"] ?></div>
+                        <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zarin["sales"],'fa') ?></div>
                     </div>
 			<div class="zaringate_summary_item">
-            <div class="zaringate_summary_title"><?php echo $chart_info_zaring["midt_label"] ?></div>
-            <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zaring["midt"],'fa') ?></div>
+            <div class="zaringate_summary_title"><?php echo $chart_info_zarin["midt_label"] ?></div>
+            <div class="zaringate_summary_value"><?php echo GF_tr_num($chart_info_zarin["midt"],'fa') ?></div>
             </div>
                 </div>
         </form>
@@ -943,10 +924,10 @@ class GFZarinGate {
                         previousPoint = null;
                         }
                         }
-                        var zaringate_graph_tooltip1s1 = <?php echo GF_tr_num($chart_info_zaring["tooltips"],'fa') ?>;
-                        jQuery.plot(jQuery("#graph_placeholder1"), [<?php echo $chart_info_zaring["series"] ?>], <?php echo $chart_info["options"] ?>);
+                        var zaringate_graph_tooltip1s1 = <?php echo GF_tr_num($chart_info_zarin["tooltips"],'fa') ?>;
+                        jQuery.plot(jQuery("#graph_placeholder1"), [<?php echo $chart_info_zarin["series"] ?>], <?php echo $chart_info["options"] ?>);
                         jQuery(window).resize(function(){
-                        jQuery.plot(jQuery("#graph_placeholder1"), [<?php echo $chart_info_zaring["series"] ?>], <?php echo $chart_info["options"] ?>);
+                        jQuery.plot(jQuery("#graph_placeholder1"), [<?php echo $chart_info_zarin["series"] ?>], <?php echo $chart_info["options"] ?>);
                         });
                         var previousPoint = null;
                         jQuery("#graph_placeholder1").bind("plothover", function (event, pos, item) {
@@ -2053,9 +2034,9 @@ class GFZarinGate {
             .margin_vertical_30{margin: 30px 0; padding-left:5px;}
             .width-1{width:300px;}
             .gf_zaringate_invalid_form,.gf_zaringate_invalid_form1,.gf_zaringate_invalid_form2{margin-top:30px; background-color:#FFEBE8;border:1px solid #CC0000; padding:10px; width:auto; max-width:600px;  margin: 23px auto 0 !important; text-align: center;}
-			.js .postbox .hndle, .js .widget .widget-top {cursor: initial !important;margin: 0 !important;padding: 7px 16px !important;border-right: 2px solid !important;color: #b8860b !important;font-size: 14px !important;}
+			.js .postbox .hndle, .js .widget .widget-top {cursor: initial !important;margin: 0 !important;padding: 7px 16px !important;color:#0074A2 !important;border-top:1px solid #d54e21 !important;border-right:2px solid #D54E21 !important;font-size: 14px !important;}
 			.postbox, .stuffbox {margin-bottom: 10px;}
-			#zaringate_customer_field_tozihat {width:198px !important;}
+			#zaringate_customer_field_tozihat,#zaringate_customer_field_mobile_tozihat ,#zaringate_customer_field_email_tozihat {width:198px !important;}
 			.updated {font-family: byekan !important;margin: auto !important; max-width: 668px !important;padding: 13px !important;}
 			.updated * {font-family: byekan !important;}
         </style>
@@ -2095,6 +2076,18 @@ class GFZarinGate {
             $config["meta"]["customer_fields"] = array();
             foreach($customer_fields as $field){
                 $config["meta"]["customer_fields"][$field["name"]] = $_POST["zaringate_customer_field_{$field["name"]}"];
+            }
+			
+			$customer_fields_email = self::get_customer_fields();
+            $config["meta"]["customer_fields_email"] = array();
+            foreach($customer_fields_email as $field){
+                $config["meta"]["customer_fields_email"][$field["name"]] = $_POST["zaringate_customer_field_email_{$field["name"]}"];
+            }
+			
+			$customer_fields_mobile = self::get_customer_fields();
+            $config["meta"]["customer_fields_mobile"] = array();
+            foreach($customer_fields_mobile as $field){
+                $config["meta"]["customer_fields_mobile"][$field["name"]] = $_POST["zaringate_customer_field_mobile_{$field["name"]}"];
             }
             $config = apply_filters('gform_zaringate_save_config', $config);
             $is_validation_error = apply_filters("gform_zaringate_config_validation", false, $config);
@@ -2161,17 +2154,49 @@ class GFZarinGate {
 			</h3>
 			<div class="inside">
 			<div class="margin_vertical_10">
+
                         <div id="zaringate_customer_fields">
                         <?php
                             if(!empty($form))
                                 echo self::get_customer_information($form, $config);
                         ?>
-</div>
-				   <br/>
+				  </div> <br/>
 					<label for="gf_zaringate_desc_pm">اضافه کردن دستی توضیح</label>
 						<input type="text" name="gf_zaringate_desc_pm" id="gf_zaringate_desc_pm" class="width-1" value="<?php echo rgars($config, "meta/desc_pm") ?>" style="max-width:198px !important;"/>
                 </div>
 				</div></div></div>
+				
+				
+			<div id="normal-sortables" class="meta-box-sortables ui-sortable">
+			<div id="meta_gfdpspxpay_feed_form" class="postbox ">
+			<h3 class="hndle">
+			جزییات خریدار
+			</h3>
+			<div class="inside">
+			<p>این قسمت اختیاری بوده و نیازی به تنظیم کردن هر قسمت نمی باشد . این بخش مربوط به اطلاعات پرداخت کننده است که در سایت زرین گیت داخل جزییات هر تراکنش قابل مشاهده است .</p>
+			<p>تذکر : لطفا فیلد مربوط به هر قسمت را متناسب انتخاب نمایید . بعنوان مثال ؛ قسمت ایمیل را حتما با فیلد ایمیل ست نمایید و ....</p>
+		
+
+				 <div class="margin_vertical_10">
+                        <div class="zaringate_customer_fields_email">
+                        <?php
+                          if(!empty($form)) echo self::get_customer_information_email($form, $config);
+                        ?>
+                    </div>
+				 </div>
+				 <div class="margin_vertical_10">
+                        <div class="zaringate_customer_fields_mobile">
+                        <?php
+                              if(!empty($form))  echo self::get_customer_information_mobile($form, $config);
+                        ?>
+                    </div>
+				 </div>
+			<br>	 
+			
+			<p>فیلد تلفن همراه ، مربوط به شماره موبایلی است که در پنل سایت زرین گیت ذخیره میشود و با شماره مربوط به افزونه پیامکی فرم متفاوت است .</p>
+			</div></div></div>
+				
+				
 			<div id="normal-sortables" class="meta-box-sortables ui-sortable">
 			<div id="meta_gfdpspxpay_feed_form" class="postbox "><h3 class="hndle">تنظیمات تاییدیه و انصرف</h3><div class="inside">
                 <div class="margin_vertical_10">
@@ -2219,7 +2244,7 @@ class GFZarinGate {
                     <div style="overflow:hidden;">
                         <input type="checkbox" name="gf_zaringate_delay_notifications" id="gf_zaringate_delay_notifications" value="1" <?php checked("1", $has_delayed_notifications)?> />
                         <label class="inline" for="gf_zaringate_delay_notifications"><?php _e("ارسال ایمیل فقط در صورت تراکنش موفق ", "gravityformszaringate"); ?></label>
-						<p>تذکر : در صورتی که تیک بالا را نزنید در هرصورت ایمیل ارسال خواهد شد که میتوانید از تگ های زیر برای نمایش وضعیت تراکنش در متن ایمیل های ارسالی استفاده نمایید .</p>
+						<p>تذکر : در صورتی که تیک بالا را نزنید در صورت تراکنش ناموفق و انصرافی هم ایمیل ارسال خواهد شد که میتوانید از تگ های زیر برای نمایش وضعیت تراکنش در متن ایمیل های ارسالی استفاده نمایید .</p>
 						<hr>
 						<label style="font-size:18px !important;"> تگهای مورد استفاده در ویرایشگر متن ایمیل یا صفحه تراکنش موفق :</label><br><br>
 						<span> نام درگاه پرداخت (ساده) :  </span><span>{payment_gateway}</span>
@@ -2301,14 +2326,9 @@ class GFZarinGate {
         </form>
         </div>
         <script type="text/javascript">
-            jQuery(document).ready(function(){
-                SetPeriodNumber('#gf_zaringate_billing_cycle_number', jQuery("#gf_zaringate_billing_cycle_type").val());
-                SetPeriodNumber('#gf_zaringate_trial_period_number', jQuery("#gf_zaringate_trial_period_type").val());
-            });
             function SelectType(type){
                 jQuery("#zaringate_field_group").slideUp();
                 jQuery("#zaringate_field_group input[type=\"text\"], #zaringate_field_group select").val("");
-                jQuery("#gf_zaringate_trial_period_type, #gf_zaringate_billing_cycle_type").val("M");
                 jQuery("#zaringate_field_group input:checked").attr("checked", false);
                 if(type){
                     jQuery("#zaringate_form_container").slideDown();
@@ -2337,7 +2357,7 @@ class GFZarinGate {
                 mysack.runAJAX();
                 return true;
             }
-            function EndSelectForm(form_meta, customer_fields, recurring_amount_options){
+            function EndSelectForm(form_meta, customer_fields, customer_fields_email, customer_fields_mobile){
 				form = form_meta;
                 var type = jQuery("#gf_zaringate_type").val();
                 jQuery(".gf_zaringate_invalid_form").hide();
@@ -2353,17 +2373,13 @@ class GFZarinGate {
                     jQuery("#zaringate_wait").hide();
                     return;
                 }
-                else if(type == "donation" && GetFieldsByType(["product", "donation"]).length == 0){
-                    jQuery("#gf_zaringate_invalid_donation_form").show();
-                    jQuery("#zaringate_wait").hide();
-                    return;
-                }
 				if( type =="subscription"){
                  jQuery("#gf_zaringate_invalid_product_form2").show();
                 }
                 jQuery(".zaringate_field_container").hide();
                 jQuery("#zaringate_customer_fields").html(customer_fields);
-                jQuery("#gf_zaringate_recurring_amount").html(recurring_amount_options);
+                jQuery(".zaringate_customer_fields_email").html(customer_fields_email);
+                jQuery(".zaringate_customer_fields_mobile").html(customer_fields_mobile);
 				var post_fields = GetFieldsByType(["post_title", "post_content", "post_excerpt", "post_category", "post_custom_field", "post_image", "post_tag"]);
                 if(post_fields.length > 0){
                     jQuery("#zaringate_post_action").show();
@@ -2379,8 +2395,6 @@ class GFZarinGate {
                     jQuery("#gf_zaringate_update_post").attr("checked", false);
                     jQuery("#zaringate_post_update_action").hide();
                 }
-                SetPeriodNumber('#gf_zaringate_billing_cycle_number', jQuery("#gf_zaringate_billing_cycle_type").val());
-                SetPeriodNumber('#gf_zaringate_trial_period_number', jQuery("#gf_zaringate_trial_period_type").val());
 				jQuery(document).trigger('zaringateFormSelected', [form]);
                 jQuery("#gf_zaringate_conditional_enabled").attr('checked', false);
                 SetZarinGateCondition("","");
@@ -2397,31 +2411,6 @@ class GFZarinGate {
                 jQuery("#zaringate_field_group").slideDown();
                 jQuery("#zaringate_wait").hide();
             }
-            function SetPeriodNumber(element, type){
-                var prev = jQuery(element).val();
-                var min = 1;
-                var max = 0;
-                switch(type){
-                    case "D" :
-                        max = 100;
-                    break;
-                    case "W" :
-                        max = 52;
-                    break;
-                    case "M" :
-                        max = 12;
-                    break;
-                    case "Y" :
-                        max = 5;
-                    break;
-                }
-                var str="";
-                for(var i=min; i<=max; i++){
-                    var selected = prev == i ? "selected='selected'" : "";
-                    str += "<option value='" + i + "' " + selected + ">" + i + "</option>";
-                }
-                jQuery(element).html(str);
-            }
             function GetFieldsByType(types){
                 var fields = new Array();
                 for(var i=0; i<form["fields"].length; i++){
@@ -2436,8 +2425,6 @@ class GFZarinGate {
                         return i;
                 return -1;
             }
-        </script>
-        <script type="text/javascript">
 			<?php
             if(!empty($config["form_id"])){
                 ?>
@@ -2496,7 +2483,7 @@ class GFZarinGate {
 				else
 				{
 					selectedValue = selectedValue ? selectedValue.replace(/'/g, "&#039;") : "";
-					str += "<input type='text' placeholder='<?php _e("یک مقدار وارد نمایید", "gravityforms"); ?>' id='gf_zaringate_conditional_value' name='gf_zaringate_conditional_value' value='" + selectedValue.replace(/'/g, "&#039;") + "'>";
+					str += "<input type='text' placeholder='<?php _e("یک مقدار وارد نمایید", "gravityformszaringate"); ?>' id='gf_zaringate_conditional_value' name='gf_zaringate_conditional_value' value='" + selectedValue.replace(/'/g, "&#039;") + "'>";
 				}
                 return str;
             }
@@ -2545,7 +2532,9 @@ class GFZarinGate {
         $setting_id =  intval($_POST["setting_id"]);
         $form = RGFormsModel::get_form_meta($form_id);
         $customer_fields = self::get_customer_information($form);
-        die("EndSelectForm(" . GFCommon::json_encode($form) . ", '" . str_replace("'", "\'", $customer_fields) . "');");
+        $customer_fields_email = self::get_customer_information_email($form);
+        $customer_fields_mobile = self::get_customer_information_mobile($form);
+        die("EndSelectForm(" . GFCommon::json_encode($form) . ", '" . str_replace("'", "\'", $customer_fields) . "', '" . str_replace("'", "\'", $customer_fields_email) . "', '" . str_replace("'", "\'", $customer_fields_mobile) . "');");
     }
     public static function add_permissions(){
         global $wp_roles;
@@ -2565,41 +2554,56 @@ class GFZarinGate {
         }
         return false;
     }
-public static function shaparak_ing_By_HANNANStd($form, $is_ajax){
-$config = self::get_active_config($form);
-$currency = GFCommon::get_currency();
-if ($currency == 'IRR' || $currency == 'IRT') {
-?>
-<script type="text/javascript">
-gform.addFilter( 'gform_product_total', function(total, formId){
-<?php if ($currency == 'IRR') { ?>
-if((total < 1000) && (total > 0)) 
-<?php } 
-if ($currency == 'IRT') { ?>
-if((total < 100) && (total > 0)) 
-<?php } ?>
-{
-<?php if ($config["meta"]["shaparak"] == "sadt") { 
-if ($currency == 'IRT') {  ?>
-return 100;
-<?php } if ($currency == 'IRR') { ?>
-return 1000;
-<?php } } else { ?>
-return 0;
-<?php } ?>
-}  
-else {
-if (total < 0)
-return 0;
-return total;
-}
-}
-);
-</script>
-<?php
-}
-}
-		public static function send_to_zaringate_By_HANNANStd($confirmation, $form, $entry, $ajax){
+
+	public static function shaparak_ing_By_HANNANStd($form, $is_ajax){
+
+	$on_off = true;
+    $config = GFZarinGateData::get_feed_by_form($form["id"]);
+    if(!$config)
+        $on_off = false;
+    $config = $config[0];
+    if(!self::has_zaringate_condition($form, $config))
+         $on_off = false;
+    
+	if ($on_off == true )
+	{
+	$config = self::get_active_config($form);
+	$currency = GFCommon::get_currency();
+	if ($currency == 'IRR' || $currency == 'IRT') {
+	?>
+	<script type="text/javascript">
+	gform.addFilter( 'gform_product_total', function(total, formId){
+	<?php if ($currency == 'IRR') { ?>
+	if((total < 1000) && (total > 0)) 
+	<?php } 
+	if ($currency == 'IRT') { ?>
+	if((total < 100) && (total > 0)) 
+	<?php } ?>
+	{
+	<?php if ($config["meta"]["shaparak"] == "sadt") { 
+	if ($currency == 'IRT') {  ?>
+	return 100;
+	<?php } if ($currency == 'IRR') { ?>
+	return 1000;
+	<?php } } else { ?>
+	return 0;
+	<?php } ?>
+	}  
+	else {
+	if (total < 0)
+	return 0;
+	return total;
+	}
+	}
+	);
+	</script>
+	<?php
+	}
+	}
+	else
+		return false;
+	}
+	public static function send_to_zaringate_By_HANNANStd($confirmation, $form, $entry, $ajax){
 		if(RGForms::post("gform_submit") != $form["id"])
         {
             return $confirmation;
@@ -2675,13 +2679,19 @@ return total;
 		if ($currency == 'IRR'){$Amount = $Amount/10;}
 		$CallbackURL = self::return_url($form["id"], $entry["id"]);
 
+	$Description = "فرم " . $form["id"] . "|پیام " . $entry["id"] . "" . $Description . "";
 
-
-
-	$Description = "پرداخت فرم شماره : " . $form["id"] . " به شماره سفارش : " . $entry["id"] . "" . $Description . "";	// Required
-
-    $Email = get_bloginfo("admin_email"); // Optional
-    $Mobile ='09000000000'; // Optional
+    
+	if (rgpost('input_'. str_replace(".", "_",$config["meta"]["customer_fields_email"]["tozihat"])))
+	$Email = rgpost('input_'. str_replace(".", "_",$config["meta"]["customer_fields_email"]["tozihat"]));
+	else 
+	$Email = '-';
+		
+	if (rgpost('input_'. str_replace(".", "_",$config["meta"]["customer_fields_mobile"]["tozihat"])))
+	$Mobile = rgpost('input_'. str_replace(".", "_",$config["meta"]["customer_fields_mobile"]["tozihat"]));
+	else 
+	$Mobile ='-';
+	
 	$server = self::get_server();
 	if ($server == "German")
 	{
@@ -2700,18 +2710,24 @@ return total;
 								'CallbackURL' 	=> $CallbackURL
 							)
 	);
-	
 	if($result->Status == 100)
 	{
-	Header('Location: https://www.zarinpal.com/pg/StartPay/'.$result->Authority.'ZarinGate');
+	$payurl = 'https://www.zarinpal.com/pg/StartPay/'.$result->Authority.'ZarinGate';
+	echo "<script type='text/javascript'>window.onload = function () { top.location.href = '" . $payurl . "'; };</script>";
 	} else {
+		global $current_user;
+		$user_id = 0;
+		$user_name = "مهمان";
+		if($current_user && $user_data = get_userdata($current_user->ID)){
+        $user_id = $current_user->ID;
+        $user_name = $user_data->display_name;}
+		RGFormsModel::update_lead_property($entry["id"], "payment_status", 'Failed');
+	    RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : ناموفق - خطای تراکنش : %s - یعنی : %s", "gravityformszaringate"), $result->Status, self::khata_nama($result->Status)));
 		$form_string = "";
         $validation_message = "<div class='validation_error'>" . self:: khata_nama($result->Status) . "</div>";
         $form_string .= apply_filters("gform_validation_message_{$form["id"]}", apply_filters("gform_validation_message", $validation_message, $form), $form);
         return apply_filters("gform_get_form_filter_{$form["id"]}",apply_filters('gform_get_form_filter',$form_string, $form), $form);
 	}
-	
-	
   }
   }
  public static function gf_create_user_By_HANNANStd($entry, $form, $fulfilled = false) {
@@ -2865,9 +2881,9 @@ return total;
 	private static function return_url($form_id, $lead_id) {
 	$pageURL = GFCommon::is_ssl() ? 'https://' : 'http://';
 	if ( $_SERVER['SERVER_PORT'] != '80' ) {
-	$pageURL .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . $_SERVER['REQUEST_URI'];
+	$pageURL .= $_SERVER['SERVER_NAME'] . ':' . $_SERVER['SERVER_PORT'] . utf8_encode($_SERVER['REQUEST_URI']);
 	} else {
-	$pageURL .= $_SERVER['SERVER_NAME'] . $_SERVER['REQUEST_URI'];
+	$pageURL .= $_SERVER['SERVER_NAME'] . utf8_encode($_SERVER['REQUEST_URI']);
 	}
 	$ids_query = "id={$form_id}|{$lead_id}";
 	return add_query_arg("Return", $ids_query, $pageURL);
@@ -2902,7 +2918,7 @@ return total;
 	if(!$query_string || $query_string==0) {
 	$stat = 'completed';
     $transaction_id = rand(100000000000000,999999999999999);
-	self::set_payment_status($config, $form, $form_id, $entry, $stat, $transaction_type, $transaction_id, 0);	
+	self::set_payment_status($config, $form, $form_id, $entry, $stat, $transaction_type, $transaction_id, 0 , 0);	
 	}else {
 	$MerchantID = self::get_merchent();
 	$Amount = $query_string;
@@ -2925,28 +2941,33 @@ return total;
 									'Amount'	 => $Amount
 								)
 	);
-		if($result->Status == 100){
+	if($result->Status == 100){
 		$stat = 'completed';
 		$transaction_id = $result->RefID;
+		$fault = 0;
 		}
 		else {
 		$stat = 'failed';
-	    $transaction_id = $result->Status;
+		$transaction_id = 0;
+	    $fault = $result->Status;
 		}
-
-	} else {
+	} 
+	else {
 	$stat = 'cancelled';
 	$transaction_id = 0;
+	$fault = 0;
 	}	
-	self::set_payment_status($config, $form, $form_id, $entry, $stat, $transaction_type, $transaction_id, $query_string);	
+	self::set_payment_status($config, $form, $form_id, $entry, $stat, $transaction_type, $transaction_id, $query_string, $fault);	
 	}
     }
 	}
     }
-    public static function set_payment_status($config, $form, $form_id, $entry, $status, $transaction_type, $transaction_id, $amount){
+    public static function set_payment_status($config, $form, $form_id, $entry, $status, $transaction_type, $transaction_id, $amount, $fault){
 	if (!$entry['transaction_id']){
 	$wp_session = WP_Session::get_instance();
+	@session_start();
 	$wp_session['refid_zaringate'] = $form["id"].$entry["id"];
+	$_SESSION["refids_zaringate"] = $form["id"].$entry["id"];
 	global $current_user;
 			$user_id = 0;
 			$user_name = "مهمان";
@@ -2965,8 +2986,8 @@ return total;
                                 self::log_debug("Updating entry.");
                                 RGFormsModel::update_lead($entry);
                                 self::log_debug("Adding note.");
-                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت اشتراک : موفق - مبلغ پرداخت : %s - کد رهگیری : %s", "gravityforms"), GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $transaction_id));
-								RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("تغییرات اطلاعات فیلدها فقط در همین رسید اعمال خواهد شد و بر روی وضعیت کاربر تاثیری نخواهد داشت .", "gravityforms")));
+                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت اشتراک : موفق - مبلغ پرداخت : %s - کد رهگیری (شماره سند) : %s", "gravityformszaringate"), GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $entry["transaction_id"]));
+								RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("تغییرات اطلاعات فیلدها فقط در همین رسید اعمال خواهد شد و بر روی وضعیت کاربر تاثیری نخواهد داشت .", "gravityformszaringate")));
 								self::send_notification( "form_submission", $form, $entry );
 								self::log_debug("Inserting transaction.");
                                     self::fulfill_order($entry, $transaction_id, $amount);
@@ -2982,7 +3003,7 @@ return total;
                                 self::log_debug("Updating entry.");
                                 RGFormsModel::update_lead($entry);
                                 self::log_debug("Adding note.");
-                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : موفق - مبلغ پرداخت : %s - کد رهگیری : %s", "gravityforms"), GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $transaction_id));
+                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : موفق - مبلغ پرداخت : %s - کد رهگیری (شماره سند) : %s", "gravityformszaringate"), GFCommon::to_money($entry["payment_amount"], $entry["currency"]), $entry["transaction_id"]));
 								self::send_notification( "form_submission", $form, $entry );
 								self::log_debug("Inserting transaction.");  
                                     self::fulfill_order($entry, $transaction_id, $amount);
@@ -2997,7 +3018,7 @@ return total;
                                 self::log_debug("Updating entry.");
                                 RGFormsModel::update_lead($entry);
                                 self::log_debug("Adding note.");
-                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : ناموفق - خطای تراکنش : %s", "gravityforms"), $transaction_id));
+                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : ناموفق - خطای تراکنش : %s یعنی %s", "gravityformszaringate"), $fault, self::khata_nama($fault)));
 							    if(!$config["meta"]["delay_notifications"]){self::send_notification ( "form_submission", $form, $entry );}  
                     break;
 					case "cancelled" :
@@ -3008,7 +3029,7 @@ return total;
                                 self::log_debug("Updating entry.");
                                 RGFormsModel::update_lead($entry);
                                 self::log_debug("Adding note.");
-                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : منصرف شده", "gravityforms")));
+                                RGFormsModel::add_note($entry["id"], $user_id, $user_name, sprintf(__("وضعیت پرداخت : منصرف شده", "gravityformszaringate")));
 								if(!$config["meta"]["delay_notifications"]){self::send_notification ( "form_submission", $form, $entry );}
 					break;	
 					
@@ -3017,11 +3038,22 @@ return total;
     if(!class_exists("GFFormDisplay"))
     require_once(GFCommon::get_base_path() . "/form_display.php");	
     $confirmation = GFFormDisplay::handle_confirmation( $form, $entry, false );	
-	if ( $status == "failed"){$vaziat = "تراکنش ناموفق بود . خطای تراکنش : ". $transaction_id ."<br>". self:: khata_nama($transaction_id);}
-	if ( $status == "cancelled"){ if($config["meta"]["cancel_pm"]){$vaziat = $config["meta"]["cancel_pm"];}else{$vaziat = 'تراکنش به دلیل انصراف کاربر ناتمام باقی ماند . ';} }
+	if ( $status == "failed"){
+	$tr = $entry["id"] ? ("<br/>شماره سفارش : ".$entry["id"]) : "";		
+	$vaziat = "تراکنش ناموفق بود . خطای تراکنش : ". $fault ."<br>". self:: khata_nama($fault).$tr;
+	}
+	if ( $status == "cancelled"){ if($config["meta"]["cancel_pm"]){$vaziat = $config["meta"]["cancel_pm"];}else{$vaziat = 'تراکنش به دلیل انصراف کاربر ناتمام باقی ماند . ';} 
+	$tr = $entry["id"] ? ("<br/>شماره سفارش : ".$entry["id"]) : "";		
+	$vaziat = $vaziat.$tr;
+	}
 	if ( $status == "completed" || $entry["payment_status"] == "Active" || $entry["payment_status"] == "Paid") $vaziat = $confirmation;
 	$wp_session = WP_Session::get_instance();
-	if (isset($entry['transaction_id']) && !isset($wp_session['refid_zaringate']) ) { 
+	@session_start();
+	if ($wp_session['refid_zaringate'])
+	$sess = $wp_session['refid_zaringate'];
+	else if ($_SESSION["refids_zaringate"])
+	$sess = $_SESSION["refids_zaringate"];
+	if (isset($entry['transaction_id']) && !isset($sess) ) { 
 	unset($vaziat);
 	$vaziat = "این تراکنش قبلا به پایان رسیده بود و نتیجه آن نیز اعلام شده بود . بنا به دلایل امنیتی از بازگو کردن وضعیت آن به شما معذوریم .";	
 	} 
@@ -3063,7 +3095,10 @@ return total;
 			}
 		if($config["meta"]["type"] == "subscription" )	
 		if(class_exists("GFUser")) self::gf_create_user_By_HANNANStd($entry, $form);	
-		if(class_exists("GFTwilio")) GFTwilio::export($entry, $form);
+		if(class_exists("GFTwilio")) 
+		{	
+		if (function_exists('export')) GFTwilio::export($entry, $form);
+		}
 		if(class_exists("GFHANNANSMS")) GFHANNANSMS::sendsms_By_HANNANStd($entry, $form);
 		if(!class_exists("GFFormDisplay"))
 		require_once(GFCommon::get_base_path() . "/form_display.php");
@@ -3125,9 +3160,9 @@ return $total;
 	public static function uninstall(){
         if(!GFZarinGate::has_access("gravityforms_zaringate_uninstall"))
         die(__("شما مجوز کافی برای این کار را ندارید . سطح دسترسی شما پایین تر از حد مجاز است . ", "gravityformszaringate"));
-        GFZarinGateData::drop_tables();
-        delete_option("gf_zaringate_site_name");
-        delete_option("gf_zaringate_auth_token");
+        GFZarinGateData::drop_tables();        
+		delete_option("gf_zaringate_settings");
+        delete_option("gf_zaringate_configured");
         delete_option("gf_zaringate_version");
         $plugin = "gravityformszaringate/zaringate.php";
         deactivate_plugins($plugin);
@@ -3164,6 +3199,57 @@ return $total;
         $str .= "";
         return $str;
     }
+			//email
+	private static function get_customer_information_email($form, $config=null){
+		$form_fields = self::get_form_fields($form);
+		$str = "";
+        $customer_fields_email = self::get_customer_fields();
+        foreach($customer_fields_email as $field){
+            $selected_field = $config ? $config["meta"]["customer_fields_email"][$field["name"]] : "";
+            $str .= "<label style='margin-left:104px;' for='zaringate_customer_field_email_tozihat'>ایمیل</label>" . self::get_mapped_field_list_email($field["name"], $selected_field, $form_fields) . "";
+        }
+        $str .= "";
+        return $str;
+    }
+	private static function get_mapped_field_list_email($variable_name, $selected_field, $fields){
+        $field_name = "zaringate_customer_field_email_" . $variable_name;
+        $str = "<select name='$field_name' id='$field_name'><option value=''></option>";
+        foreach($fields as $field){
+            $field_id = $field[0];
+            $field_label = esc_html(GFCommon::truncate_middle($field[1], 40));
+            $selected = $field_id == $selected_field ? "selected='selected'" : "";
+            $str .= "<option value='" . $field_id . "' ". $selected . ">" . $field_label . "</option>";
+        }
+        $str .= "</select>";
+        return $str;
+    }
+	//
+			//mobile
+	private static function get_customer_information_mobile($form, $config=null){
+		$form_fields = self::get_form_fields($form);
+		$str = "";
+        $customer_fields_mobile = self::get_customer_fields();
+        foreach($customer_fields_mobile as $field){
+            $selected_field = $config ? $config["meta"]["customer_fields_mobile"][$field["name"]] : "";
+            $str .= "<label style='margin-left:77px;' for='zaringate_customer_field_mobile_tozihat'>تلفن همراه</label>" . self::get_mapped_field_list_mobile($field["name"], $selected_field, $form_fields) . "";
+        }
+        $str .= "";
+        return $str;
+    }
+	private static function get_mapped_field_list_mobile($variable_name, $selected_field, $fields){
+        $field_name = "zaringate_customer_field_mobile_" . $variable_name;
+        $str = "<select name='$field_name' id='$field_name'><option value=''></option>";
+        foreach($fields as $field){
+            $field_id = $field[0];
+            $field_label = esc_html(GFCommon::truncate_middle($field[1], 40));
+            $selected = $field_id == $selected_field ? "selected='selected'" : "";
+            $str .= "<option value='" . $field_id . "' ". $selected . ">" . $field_label . "</option>";
+        }
+        $str .= "</select>";
+        return $str;
+    }
+	//
+	
 	private static function get_customer_fields(){
         return array(array("name" => "tozihat" , "label" => "<label for='zaringate_customer_field_tozihat' style='margin-left:17px;'>انتخاب محتوای یک فیلد</label>"));
     }
@@ -3205,17 +3291,57 @@ return $total;
         $folder = basename(dirname(__FILE__));
         return WP_PLUGIN_DIR . "/" . $folder;
     }
-    public static function admin_edit_payment_status_by_HANNANStd($payment_status, $form_id, $lead)
+    public static function admin_edit_payment_status_details_by_HANNANStd($form_id, $lead)
     {	
+		$payment_gateway = rgar($lead, "payment_method");
+		if ($payment_gateway == "zaringate") {
+		?>
+		<hr/>
+		<strong style="font-family:byekan">اطلاعات تراکنش :</strong><br/><br/>
+		<?php
 		$zaringate_feed_id = gform_get_meta($lead["id"], "zaringate_feed_id");
 		$feed_config = GFZarinGateData::get_feed($zaringate_feed_id);
 		$transaction_type = rgar($lead, "transaction_type");
-		$payment_gateway = rgar($lead, "payment_method");
-    	if ($payment_gateway <> "zaringate" || strtolower(rgpost("save")) <> __("Edit", "gravityforms"))
-    	return $payment_status;	
-		$payment_string = gform_tooltip("zaringate_edit_payment_status","",true);
+		$payment_status = rgar($lead, "payment_status");
+		
+		$payment_amount = rgar($lead, "payment_amount");
+		if (empty($payment_amount))
+		{$form = RGFormsModel::get_form_meta($form_id);
+		$payment_amount = GFCommon::get_order_total($form,$lead);}
+	  	$transaction_id = rgar($lead, "transaction_id");
+		$payment_date = rgar($lead, "payment_date");
+		if (empty($payment_date))
+		{$payment_date = rgar($lead, "date_created");}
+		$date = new DateTime($payment_date);
+		$tzb = get_option('gmt_offset'); 
+		$tzn = abs($tzb) * 3600;
+		$tzh = intval(gmdate("H", $tzn));
+		$tzm = intval(gmdate("i", $tzn));
+		if ( intval($tzb) < 0) {
+		$date->sub(new DateInterval('P0DT'.$tzh.'H'.$tzm.'M'));
+		}
+		else {
+		$date->add(new DateInterval('P0DT'.$tzh.'H'.$tzm.'M'));}
+		$payment_date = $date->format('Y-m-d H:i:s');
+		$payment_date = GF_jdate('Y-m-d H:i:s',strtotime($payment_date),'',date_default_timezone_get(),'en'); 
+		
+		if ($payment_status =='Paid') $payment_status_persian = 'موفق';	
+		if ($payment_status =='Active') $payment_status_persian = 'موفق';	
+		if ($payment_status =='Cancelled') $payment_status_persian = 'منصرف شده';	
+		if ($payment_status =='Failed') $payment_status_persian = 'ناموفق';			
+		if ($payment_status =='Processing') $payment_status_persian = 'معلق';
+		
+		if (!strtolower(rgpost("save")) || RGForms::post("screen_mode") != "edit" ) {
+		echo 'وضعیت پرداخت : '.$payment_status_persian.'<br/><br/>';	
+		echo 'تاریخ پرداخت : '.$payment_date.'<br/><br/>';
+		echo 'مبلغ پرداختی : '.$payment_amount.'<br/><br/>';
+		echo 'کد رهگیری : '.$transaction_id.'<br/><br/>';
+		echo 'درگاه پرداخت : زرین گیت';
+		}
+		else {
+		$payment_string = '';
 		$payment_string .= '<select id="payment_status" name="payment_status">';
-		$payment_string .= '<option value="' . $payment_status . '" selected>' . $payment_status . '</option>';
+		$payment_string .= '<option value="' . $payment_status . '" selected>' . $payment_status_persian . '</option>';
 		if($transaction_type==1){
 		if($payment_status != "Paid")
 		$payment_string .= '<option value="Paid">موفق</option>';
@@ -3238,54 +3364,34 @@ return $total;
 		if($payment_status != "Processing")
 		$payment_string .= '<option value="Processing">معلق</option>';
 		$payment_string .= '</select>';
-		return $payment_string;
-    }
-    public static function admin_edit_payment_status_details_by_HANNANStd($form_id, $lead)
-    {	$form_action = strtolower(rgpost("save"));
-		$payment_gateway = rgar($lead, "payment_method");
-		if ($payment_gateway <> "zaringate" || $form_action <> __("Edit", "gravityforms"))
-			return;
-		$payment_amount = rgar($lead, "payment_amount");
-		if (empty($payment_amount))
-		{$form = RGFormsModel::get_form_meta($form_id);
-		$payment_amount = GFCommon::get_order_total($form,$lead);}
-	  	$transaction_id = rgar($lead, "transaction_id");
-		$payment_date = rgar($lead, "payment_date");
-		if (empty($payment_date))
-		{$payment_date = rgar($lead, "date_created");}
-		$date = new DateTime($payment_date);
-		$tzb = get_option('gmt_offset'); 
-		$tzn = abs($tzb) * 3600;
-		$tzh = intval(gmdate("H", $tzn));
-		$tzm = intval(gmdate("i", $tzn));
-		if ( intval($tzb) < 0) {
-		$date->sub(new DateInterval('P0DT'.$tzh.'H'.$tzm.'M'));
-		}else {
-		$date->add(new DateInterval('P0DT'.$tzh.'H'.$tzm.'M'));}
-		$payment_date = $date->format('Y-m-d H:i:s');
-		$payment_date = GF_jdate('Y-m-d H:i:s',strtotime($payment_date),'',date_default_timezone_get(),'en'); 
+		echo 'وضعیت پرداخت :'.$payment_string.'<br/><br/>';		
 		?>
 		<div id="edit_payment_status_details" style="display:block">
 			<table>
-				<tr>
-					<td colspan="2"><strong>اطلاعات پرداخت</strong></td>
-				</tr>
 				<tr>
 					<td>تاریخ پرداخت : </td>
 					<td><input type="text" id="payment_date" name="payment_date" value="<?php echo $payment_date?>"></td>
 				</tr>
 				<tr>
-					<td>کد رهگیری : </td>
-					<td><input type="text" id="zaringate_transaction_id" name="zaringate_transaction_id" value="<?php echo $transaction_id?>"></td>
-				</tr>
-				<tr>
 					<td>مبلغ پرداختی : </td>
 					<td><input type="text" id="payment_amount" name="payment_amount" value="<?php echo $payment_amount?>"></td>
 				</tr>
-			</table>
+				<tr>
+					<td>کد رهگیری : </td>
+					<td><input type="text" id="zaringate_transaction_id" name="zaringate_transaction_id" value="<?php echo $transaction_id?>"></td>
+				</tr>
+
+			</table><br/>
 		</div>
 		<?php
+		echo 'درگاه پرداخت : زرین گیت (غیر قابل ویرایش)';
 	}
+	
+
+echo '<br/><hr/>';
+	}
+	}
+	
 	public static function admin_update_payment_by_HANNANStd($form, $lead_id){	
 		$lead = RGFormsModel::get_lead($lead_id);
 	    check_admin_referer('gforms_save_entry', 'gforms_save_entry');
@@ -3343,7 +3449,7 @@ return $total;
 		case "Failed" : $statn= 'ناموفق'; break;
 		case "Processing" : $statn= 'معلق'; break;
 		}
-		RGFormsModel::add_note($lead["id"], $user_id, $user_name, sprintf(__("اطلاعات تراکنش به صورت دستی ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", "gravityforms"), $statn, GFCommon::to_money($lead["payment_amount"], $lead["currency"]), $payment_transaction, $lead["payment_date"]));	 
+		RGFormsModel::add_note($lead["id"], $user_id, $user_name, sprintf(__("اطلاعات تراکنش به صورت دستی ویرایش شد . وضعیت : %s - مبلغ : %s - کد رهگیری : %s - تاریخ : %s", "gravityformszaringate"), $statn, GFCommon::to_money($lead["payment_amount"], $lead["currency"]), $payment_transaction, $lead["payment_date"]));	 
 		if($payment_status == 'Paid' || $payment_status == 'Active'){
 		RGFormsModel::update_lead_property($lead["id"], "is_fulfilled", 1);
 		}
@@ -3351,17 +3457,7 @@ return $total;
 		RGFormsModel::update_lead_property($lead["id"], "is_fulfilled", 0);
 		}   
 	}	
-function gateway_entry_info_By_HANNANStd($form_id, $lead) {
-$payment_gateway = $lead["payment_method"];
-if ($payment_gateway == "zaringate"){
-if($lead["payment_status"] == 'Active') {
-echo 'درگاه پرداخت : زرین گیت (غیر قابل ویرایش)<br><br>پرداخت هزینه اشتراک';
-}
-if($lead["payment_status"] == 'Paid') {
-echo 'درگاه پرداخت : زرین گیت (غیر قابل ویرایش)<br><br>پرداخت معمولی';
-}
-}
-}	
+ 
 function set_logging_supported($plugins)
 {
 $plugins[self::$slug] = "ZarinGate Payments Standard";
