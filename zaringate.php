@@ -2712,7 +2712,7 @@ class GFZarinGate {
 	);
 	if($result->Status == 100)
 	{
-	$payurl = 'https://www.zarinpal.com/pg/StartPay/'.$result->Authority.'ZarinGate';
+	$payurl = 'https://www.zarinpal.com/pg/StartPay/'.$result->Authority.'/ZarinGate';
 	echo "<script type='text/javascript'>window.onload = function () { top.location.href = '" . $payurl . "'; };</script>";
 	} else {
 		global $current_user;
